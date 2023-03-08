@@ -3,15 +3,11 @@ times = 0
 
 #draws a random card
 def card():
-    rand = random.randint(1,52)
-    if(rand > 13 and rand < 27):
-        rand = rand - 13          
-    elif(rand > 26 and rand < 40):
-        rand = rand - 26     
-    elif(rand > 39):
-        rand = rand - 39     
+    rand = random.choice([1,2,3,4,5,6,7,8,9,10,11,12,13]*4)
+    
     if(rand > 10):
         rand = 10
+    
     return rand
 #------------------------------------------------------------------------------
 #Dealer and Player cards
@@ -22,8 +18,9 @@ playerhand = [card(),card()]
 #-----------------------------------------------------------------------------
 
 #Asks the player what they want to do with their cards
-def whatToDo(hand):
-    if(hand[0] == hand[1] and len(hand) == 2):
+def whatToDo(hand, times):
+    
+    if(hand[0] == hand[1] and len(hand) == 2 and times == 1):
         ask = input("[H]it, [S]tand, [D]ouble Down or [SP]lit:")
     else:
         ask = input("[H]it, [S]tand or [D]ouble Down: ")
@@ -39,11 +36,11 @@ def playAgain():
         #clears everthing and creates new cards for the player and dealer
         times = 0
         playerhand = [card(),card()]
-        dealercards = [card(),card()]
+        dealerhand = [card(),card()]
     
         print(" ")
         print("Dealer is showing a ",dealerhand[0])
-        play(playerhand,times,dealercards)
+        play(playerhand,times,dealerhand)
         playAgain()
     elif(tryAgain == "N" or tryAgain == "n"):
         quit()
@@ -59,19 +56,10 @@ def split(playercards,timesThrough,dealercards):
     print("Your cards: ",playercards," For a total of: ",sum(playercards))
     print(" ")
     
-    ask = whatToDo(playerhand)
     
-    if(playercards[0] == 1 and playercards[1] == 10
-    or playercards[1] == 1 and playercards[0] == 10):
-        print("Your cards: ", playercards,' "21 You win"')
-        playAgain()
-    
-    elif(dealercards[0] == 1 and dealercards[1] == 10
-    or dealercards[1] == 1 and dealercards[0] == 10):
-        print("Dealer: ", dealercards,' "21 Dealer wins"')
-        playAgain()
+    ask = whatToDo(playerhand,timesThrough)
         
-    elif(ask ==  "H" or ask == "h"):
+    if(ask ==  "H" or ask == "h"):
         playercards.append(card())
         
         if(sum(playercards) > 21):
@@ -100,7 +88,7 @@ def play(playercards,timesThrough,dealercards):
     
     print(" ")
     print("Your cards: ",playercards," For a total of: ",sum(playercards))
-    ask = whatToDo(playercards)
+    ask = whatToDo(playercards, timesThrough)
     print(" ")
     
     if(playercards[0] == 1 and playercards[1] == 10
@@ -164,7 +152,8 @@ def play(playercards,timesThrough,dealercards):
         #makes two hands from the original hand
         hand1 = [playercards[0],card()]
         hand2 = [playercards[1],card()]
-        playercards = [0,1]
+        
+        
         
         #plays the players hand one after another
         print("Play the First hand")
@@ -176,7 +165,7 @@ def play(playercards,timesThrough,dealercards):
         print(" ")
         
         hands = [hand1,hand2]
-        print (hands[0],hands[1])
+        
         print("The First hand: ",hands[0], " Totals to: ", sum(hands[0]),"  ","The Second hand: ",hands[1], " Totals to: ", sum(hands[1]))
         print(" ")
         
