@@ -90,18 +90,8 @@ def play(playercards,timesThrough,dealercards):
     print("Your cards: ",playercards," For a total of: ",sum(playercards))
     ask = whatToDo(playercards, timesThrough)
     print(" ")
-    
-    if(playercards[0] == 1 and playercards[1] == 10
-    or playercards[1] == 1 and playercards[0] == 10):
-        print("Your cards: ", playercards,' "21 You win"')
-        playAgain()
-    
-    elif(dealercards[0] == 1 and dealercards[1] == 10
-    or dealercards[1] == 1 and dealercards[0] == 10):
-        print("Dealer: ", dealercards,' "21 Dealer wins"')
-        playAgain()
             
-    elif(ask ==  "H" or ask == "h"):
+    if(ask ==  "H" or ask == "h"):
         playercards.append(card())
         if(sum(playercards) > 21):
             print(" ")            
@@ -153,8 +143,6 @@ def play(playercards,timesThrough,dealercards):
         hand1 = [playercards[0],card()]
         hand2 = [playercards[1],card()]
         
-        
-        
         #plays the players hand one after another
         print("Play the First hand")
         split(hand1,timesThrough,dealercards)
@@ -196,8 +184,17 @@ def play(playercards,timesThrough,dealercards):
         print("Not a valid input")
         
 #------------------------------------------------------------------------------
-   
-print("Dealer is showing a ",dealerhand[0])
-play(playerhand,times,dealerhand)
-print(" ")
-playAgain()
+if(playerhand[0] == 1 and playerhand[1] == 10
+    or playerhand[1] == 1 and playerhand[0] == 10):
+        print("Your cards: ", playerhand,' "21 You win"')
+        playAgain()
+    
+elif(dealerhand[0] == 1 and dealerhand[1] == 10
+    or dealerhand[1] == 1 and dealerhand[0] == 10):
+        print("Dealer: ", dealerhand,' "21 Dealer wins"')
+        playAgain()
+else:
+    print("Dealer is showing a ",dealerhand[0])
+    play(playerhand,times,dealerhand)
+    print(" ")
+    playAgain()
