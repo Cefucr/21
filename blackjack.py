@@ -51,17 +51,21 @@ def whatToDo(hand, times, split):
 #asks player if they want to play again
 def playAgain():
     global chips
+
     if(chips <= 0):
         print("Out of chips. You Lost :(")
         quit()
         
     tryAgain = input("Play Again? (Y/N): ")
-    bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
-    if(bet.isnumeric() == False or int(bet) > chips):
-        print("Not a sufficient number")
-        quit()
-    elif(tryAgain == "Y" or tryAgain == "y"):
+    
+    if(tryAgain == "Y" or tryAgain == "y"):
         #clears everthing and creates new cards for the player and dealer
+        bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
+    
+        if(bet.isnumeric() == False or int(bet) > chips):
+            print("Not a sufficient number")
+            playAgain()
+        
         times = 0
         playerhand = [card(),card()]
         dealerhand = [card(),card()]
@@ -86,8 +90,8 @@ def playAgain():
             
         play(playerhand,times,dealerhand,int(bet))
         playAgain()
-    elif(tryAgain == "N" or tryAgain == "n"):
-        quit()
+    elif(tryAgain != "Y" and tryAgain != "y"):
+        playAgain()
     else:
         playAgain()
 #------------------------------------------------------------------------------
