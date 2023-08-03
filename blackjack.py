@@ -3,7 +3,6 @@ import random
 times = 0
 chips = int(input("How many chips do you have?: "))
 
-
 bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
 
 #draws a random card
@@ -90,8 +89,8 @@ def playAgain():
             
         play(playerhand,times,dealerhand,int(bet))
         playAgain()
-    elif(tryAgain != "Y" and tryAgain != "y"):
-        playAgain()
+    elif(tryAgain == "N" or tryAgain == "n"):
+        print("You have quit. Your chips: ",chips)
     else:
         playAgain()
 #------------------------------------------------------------------------------
