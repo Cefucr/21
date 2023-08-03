@@ -1,9 +1,10 @@
+
 import random
+chips = int(input("How many chips do you have?: "))
+bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
 
 times = 0
-chips = int(input("How many chips do you have?: "))
-
-bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
+startingchips = chips
 
 #draws a random card
 def card():
@@ -90,7 +91,16 @@ def playAgain():
         play(playerhand,times,dealerhand,int(bet))
         playAgain()
     elif(tryAgain == "N" or tryAgain == "n"):
-        print("You have quit. Your chips: ",chips)
+        print("You have quit. Your chips: ",chips,"\n")
+        
+        if(startingchips > chips):
+            print("Sadly you lost ",startingchips - chips," chip(s). :C")
+        elif(startingchips < chips):
+            print("You made ",chips - startingchips,"chip(s) in profit. :D")
+        elif(startingchips == chips):
+            print("You didnt lose or make anything")
+        exit()
+        
     else:
         playAgain()
 #------------------------------------------------------------------------------
