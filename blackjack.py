@@ -1,4 +1,3 @@
-
 import random
 chips = int(input("How many chips do you have?: "))
 bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
@@ -56,7 +55,7 @@ def playAgain():
         print("Out of chips. You Lost :(")
         quit()
         
-    tryAgain = input("Play Again? (Y/N): ")
+    tryAgain = input("\nPlay Again? (Y/N): ")
     
     if(tryAgain == "Y" or tryAgain == "y"):
         #clears everthing and creates new cards for the player and dealer
@@ -91,14 +90,14 @@ def playAgain():
         play(playerhand,times,dealerhand,int(bet))
         playAgain()
     elif(tryAgain == "N" or tryAgain == "n"):
-        print("You have quit. Your chips: ",chips,"\n")
+        print("\nYou have quit. Your chips: ",chips)
         
         if(startingchips > chips):
-            print("Sadly you lost ",startingchips - chips," chip(s). :C")
+            print("Sadly you lost ",startingchips - chips," chip(s). :C ")
         elif(startingchips < chips):
-            print("You made ",chips - startingchips,"chip(s) in profit. :D")
+            print("You made ",chips - startingchips,"chip(s) in profit. :D ")
         elif(startingchips == chips):
-            print("You didnt lose or make anything")
+            print("You didn't lose or win any chips. :| ")
         exit()
         
     else:
