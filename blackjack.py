@@ -1,303 +1,250 @@
 import random
-chips = int(input("How many chips do you have?: "))
-bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
+import os
 
-times = 0
-startingchips = chips
+def clearTerminal(): # Terminal clearer
+    if os.name == 'nt':
+        os.system('CLS')
+    if os.name == 'posix':
+        os.system('clear')
 
-#draws a random card
-def card():
-    rand = random.choice([1,2,3,4,5,6,7,8,9,10,11,12,13]*4)
+class Card:
+    def __init__(self,value,suit):
+        self.value = value
+        self.suit = suit
+        self.face = str(value)
+
+        if self.value == 11: self.face = "J"
+        elif self.value == 12: self.face = "Q"
+        elif self.value == 13: self.face = "K"
+        elif self.value == 1: self.face = "A" 
+
+class Deck:
+    def __init__(self):
+        self.deckCount = 4
+        self.cardValues = [1,2,3,4,5,6,7,8,9,10,11,12,13]
+        self.suits = ["♥","♦","♠","♣"] 
+        self.pile = []
+        self.newDeck()
+
+    def newDeck(self):
+        self.pile = [Card(value,suit) for i in range(self.deckCount)for suit in self.suits for value in self.cardValues]
+        random.shuffle(self.pile) # Shuffling the deck
+
+    def drawCard(self):
+        if len(self.pile) <= 30: #shuffling the deck if cards are running low
+            print("Deck is running low, reshuffling...")
+            self.newDeck()
+
+        return self.pile.pop(0) #draws card from the deck
+
+class Hand:
+    def __init__(self,deck,sp):
+        self.cards = []
+        self.totalValue = 0
+        self.isBlackJack = False
+        self.isBusted = False
+        if sp == False:
+            for i in range(2): # If hand isn't a splitted hand then we make the hand here by drawing two cards
+                self.addCard(deck.drawCard())
+
+    def addCard(self, card): # Draw a new card to hand
+        self.cards.append(card)
+        self.totalCalc()
     
-    if(rand > 10):
-        rand = 10
-    elif(rand == 1):
-        rand = 11        
-    return rand
-#------------------------------------------------------------------------------
-#Dealer and Player cards
+    def totalCalc(self):
+        total = 0
+        aces = 0
+        
+        for card in self.cards:
+            if card.value > 10:
+                card.value = 10
+                total += 10
+            elif card.value == 1:
+                aces += 1
+                total += 11
+            else:
+                total += card.value
+        while total > 21 and aces > 0:
+            total -= 10
+            aces -= 1
+        
+        self.total = total # Here we keep track of the sum of the hand
+        self.busted()
+        self.blackJack()
 
-dealerhand = [card(),card()]
-playerhand = [card(),card()]
+    def busted(self): # Check if hand busted
+        if self.total > 21:
+            self.isBusted = True
 
-if(sum(playerhand) == 22):
-    playerhand[0] = 1
-#-----------------------------------------------------------------------------
+    def blackJack(self): # Check if hand had a blackjack
+        if self.total == 21 and len(self.cards) == 2:
+            self.isBlackJack = True
+        return self.isBlackJack
 
-#Asks the player what they want to do with their cards
-def whatToDo(hand, times, split):
+    def showHand(self):
+        return ", ".join(card.face + " " + card.suit for card in self.cards)
+
+class Chips:
+    def __init__(self):
+        self.total = 0
+        self.bet = 0
+        self.total = self.getChips()
+
+    def getChips(self):
+        while True: # Asking the player for their chip amount then validate it
+            try:
+                self.total = int(input("How many chips do you have?: "))
+                if self.total <= 0:
+                    raise ValueError("Cant play with 0 chips!")
+                break
+            except ValueError as e:
+                print(f"Error: {e}. Please try again")
             
-    if(split == True):
-        ask = input("[H]it, [S]tand:")
-        if(ask != "H" and ask != "S" and ask != "s" and ask != "h"):
-            whatToDo(hand, times, split)
-    elif(hand[0] == hand[1] and len(hand) == 2 and times == 1):
-        ask = input("[H]it, [S]tand, [D]ouble Down or [SP]lit:")
-        if(ask != "H" and ask != "S" and ask != "D" and ask != "SP"
-           and ask != "h" and ask != "s" and ask != "d" and ask != "sp" ):
-            whatToDo(hand, times, split)
-    else:
-        ask = input("[H]it, [S]tand, [D]ouble Down:")
-        if(ask != "H" and  ask != "S" and ask != "D" and ask != "h"
-                    and ask != "s" and ask != "d"):
-            whatToDo(hand, times, split)
+        return self.total
     
-    print(" ")
-    
-    return ask
-#------------------------------------------------------------------------------
+    def placeBet(self):
+        while True: # Asking the player for their bet then validate it
+            try: 
+                self.bet = int(input(f"How much do you want to bet? Your Chips {self.total}: "))
+                if self.bet > self.total or self.bet < 1:
+                    raise ValueError("Invalid input")
+                break
+            except ValueError as e:
+                print(f"Error: {e}. Please try again")
+        return self.bet
 
-#asks player if they want to play again
-def playAgain():
-    global chips
+def deal(chips):
+    clearTerminal() # Clear the terminal so it looks nicer
+    firstTime = True
 
-    if(chips <= 0):
-        print("Out of chips. You Lost :(")
+    if chips.total <= 0: #We check if player is out of chips
+        print("Out of chips!")
         quit()
+
+    chips.placeBet() # Here we ask the players bet amount
+
+    deck = Deck() # Making a new deck 
+    playerHand = Hand(deck,False) # from the deck make player and dealers hands
+    dealerHand = Hand(deck,False)    
+
+    if playerHand.isBlackJack: # Check if player or dealer had a blackjack
+        print(f'Your cards: {playerHand.showHand()} "21 You win"')
+        chips.total += chips.bet * 3
         
-    tryAgain = input("\nPlay Again? (Y/N): ")
-    
-    if(tryAgain == "Y" or tryAgain == "y"):
-        #clears everthing and creates new cards for the player and dealer
-        bet = input("How much are you willing to bet? Your chips " + str(chips) + " : ")
-    
-        if(bet.isnumeric() == False or int(bet) > chips):
-            print("Not a sufficient number")
-            playAgain()
-        
-        times = 0
-        playerhand = [card(),card()]
-        dealerhand = [card(),card()]
-        if(sum(playerhand) == 22):
-            playerhand[0] = 1
-            
-        print(" ")
-        print("Dealer is showing a ",dealerhand[0])
-        if(playerhand[0] == 11 and playerhand[1] == 10
-            or playerhand[1] == 11 and playerhand[0] == 10):
-            
-            print("Your cards: ", playerhand,' "21 You win"')
-            chips += (int(bet)*3)
-            playAgain()
-            
-        elif(dealerhand[0] == 11 and dealerhand[1] == 10
-            or dealerhand[1] == 11 and dealerhand[0] == 10):
-            
-            print("Dealer: ", dealerhand,' "21 Dealer wins"')
-            chips -= int(bet)
-            playAgain()
-            
-        play(playerhand,times,dealerhand,int(bet))
-        playAgain()
-    elif(tryAgain == "N" or tryAgain == "n"):
-        print("\nYou have quit. Your chips: ",chips)
-        
-        if(startingchips > chips):
-            print("Sadly you lost ",startingchips - chips," chip(s). :C ")
-        elif(startingchips < chips):
-            print("You made ",chips - startingchips,"chip(s) in profit. :D ")
-        elif(startingchips == chips):
-            print("You didn't lose or win any chips. :| ")
-        exit()
-        
+    elif dealerHand.isBlackJack:
+        print(f'Dealer: {dealerHand.showHand()} "21 Dealer wins"')
+        chips.total -= chips.bet
+
     else:
-        playAgain()
-#------------------------------------------------------------------------------
+        print(f'Dealer is showing a {dealerHand.cards[0].face + " " + dealerHand.cards[0].suit}')    
+        play(playerHand,firstTime,dealerHand,deck,chips)
 
-#splits the first two cards into new hands and plays a new game with them
-def split(playercards,timesThrough,dealercards,bets):
-    timesThrough += 1
-    sp = True
-    hit = False
-    global chips
-    print(" ")
-    print("Your cards: ",playercards," For a total of: ",sum(playercards))
-    print(" ")
-    
-    ask = whatToDo(playerhand,timesThrough, sp)
-        
-    if(ask ==  "H" or ask == "h"):
-        playercards.append(card())
-        for x in range(len(playercards)):
+    playAgain(chips)
 
-            if(playercards[x] == 11 and sum(playercards) > 21):
-                playercards[x] = 1
-                hit = True
-                
-        if(hit == True):
-            split(playercards,timesThrough,dealercards,bets)
-            
-        elif(sum(playercards) > 21):
-            print(" ")
-            print("Your cards: ",playercards," For a total of: ",sum(playercards))
-            print(" ")
-            print("You busted.")
-        else:
-            split(playercards,timesThrough,dealercards,bets)
-            
-    elif(ask == "S" or ask == "s"):
-        
-        return
-#------------------------------------------------------------------------------  
+def whatToDo(hand, firstTime):
+    choices = ["h","s"] # Default choices are hit and stand
 
-def play(playercards,timesThrough,dealercards,bets):
-    timesThrough += 1
-    sp = False
-    hit = False
-    global chips
-    if(timesThrough == 1):    
-        chips -= bets
+    if firstTime:
+        choices.append("d") # If it is the first hand double down is also available
+        if hand.cards[0].face == hand.cards[1].face and len(hand.cards) == 2 :
+            choices.append("sp") # If it is the first hand and the cards are the same split is available
+
+    while True:
+        ask = input(f"[{'],['.join(choice.upper() for choice in choices)}]: ").lower()
+        if ask in choices: return ask
+
+def checkWinner(dealerHand, playerHand, chips):
+    wonChips = 0
+    if playerHand.isBusted: # If players cards total > 21      
+        print(f"You busted.")
+    elif dealerHand.isBusted: # If dealers cards total > 21
+        wonChips = chips.bet * 2
+        print(f"You win {wonChips} chips. Dealer Busted")
+    elif(playerHand.total == dealerHand.total): # If players and dealers cards total are the same
+        print("Tie!")
+        wonChips = chips.bet
+    elif playerHand.total > dealerHand.total: # If players total > dealers total but didn't bust
+        wonChips = chips.bet * 2
+        print(f"You won {wonChips} chips!")
+    else:
+        print("Dealer wins!")
+
+    chips.total += wonChips
+
+def playAgain(chips):
+    while True:
+        tryAgain = input("\nPlay Again? (Y/N): ").lower() #asks player if they want to play again
+        if tryAgain == "y":
+            deal(chips) # If player wants to play again deal cards
+        elif tryAgain == "n":
+            print(f"\nYou have quit. Your chips: {chips.total}")
+            quit()
+
+def play(playerHand, firstTime, dealerHand, deck, chips):
+
+    print(f"\nYour cards: {playerHand.showHand()}")
+    ask = whatToDo(playerHand, firstTime).lower()
+
+    if firstTime: chips.total -= chips.bet # If it is the first time take the bet amount from the chips
         
-    print(" ")
-    print("Your cards: ",playercards," For a total of: ",sum(playercards))
-    ask = whatToDo(playercards, timesThrough, sp)
-    print(" ")
-            
-    if(ask ==  "H" or ask == "h"):
-        #gives another card and checks if you bust while Ace = 11 then the Ace will be 1
-        playercards.append(card())
-        for x in range(len(playercards)):
-            if(playercards[x] == 11 and sum(playercards) > 21):
-                playercards[x] = 1
-                hit = True
-                    
-        if(hit == True):
-            play(playercards,timesThrough,dealercards,bets)
-            
-        elif(sum(playercards) > 21):
-            print(" ")            
-            print("You busted.")
-            print("Your cards: ",playercards," For a total of: ",sum(playercards))
+    if ask == "h":
+        firstTime = False
+
+        playerHand.addCard(deck.drawCard())
+        if playerHand.isBusted:
+            print(f"\nYou busted. Your cards: {playerHand.showHand()}")
             return 
-        else:
-            play(playercards,timesThrough,dealercards,bets)
+        play(playerHand,firstTime,dealerHand,deck,chips)
         
-    elif(ask == "S" or ask == "D" or ask == "s" or ask == "d"):
-        
-        #Checks who won and gives chips accordingly
-        
-        if(ask ==  "D" and chips < bets / 2 or ask ==  "d" and chips < bets / 2):
-            chips += bets
-            print("\nNot enough Chips to Double down.")
-            playAgain()
-
-        elif(ask ==  "D" and chips >= bets * 2 or ask == "d" and chips >= bets * 2):
-            playercards.append(card())
-            chips -= bets
-            bets = bets * 2
-            
-            for x in range(len(playercards)):
-                
-                if(playercards[x] == 11 and sum(playercards) > 21):
-                    playercards[x] = 1
-        
-                
-            if(sum(playercards) > 21):
-                print(" ")            
-                print("You busted.")
-                print("Your cards: ",playercards," For a total of: ",sum(playercards))
+    elif ask == "s" or ask == "d":
+        if ask == "d": # If player doubles down adjust chips and draw a card after that stand
+            if chips.total < chips.bet:
+                print("\nNot enough Chips to Double Down.")
+                chips.total += chips.bet
                 return
-        while(sum(dealercards) < 17):
-            dealercards.append(card())
             
-        if(sum(dealercards) > 21):
-            print("You win. Dealer Busted")
-            print("Dealers Cards: ",dealercards, "For a total of: ",sum(dealercards))
-            chips += bets*2
-            return
-            
-        if(sum(playercards) <= 21 and sum(playercards) == sum(dealercards)):
-            print("Your cards: ",playercards," For a total of: ",sum(playercards))
-            print("Yours and the dealers scores were the same! Tie!")
-            print("Dealers Cards: ",dealercards, "For a total of: ",sum(dealercards))
-            chips += bets
+            playerHand.addCard(deck.drawCard())
+            chips.total -= chips.bet
+            chips.bet *= 2
+
+        if playerHand.isBusted:           
+            print(f"You busted.Your cards: {playerHand.showHand()}")
             return
         
-        if(sum(playercards) <= 21 and sum(playercards) > sum(dealercards)):
-            print("Your cards: ",playercards," For a total of: ",sum(playercards))
-            print("You had a bigger score than the dealer. You won")
-            print("Dealers Cards: ",dealercards, "For a total of: ",sum(dealercards))
-            chips += bets*2
-            return
-        
-        else:
-            print("Your cards: ",playercards," For a total of: ",sum(playercards))
-            print("Dealers score was bigger. You lost")
-            print("Dealers Cards: ",dealercards, "For a total of: ",sum(dealercards))
-            return
-        
-    elif(ask == "sp" and timesThrough == 1 or ask == "SP" and timesThrough == 1):
-        
+        while dealerHand.total < 17: dealerHand.addCard(deck.drawCard())
+        checkWinner(dealerHand, playerHand, chips) #Checks who won the game or if they tied
+        print(f"Your cards: {playerHand.showHand()}")
+        print(f"Dealers Cards: {dealerHand.showHand()}")
+
+    elif ask == "sp" and firstTime and chips.total >= chips.bet:
+
+        chips.total -= chips.bet #Adjust bet to double 
+        firstTime = False
+
         #makes two hands from the original hand
-        hand1 = [playercards[0],card()]
-        hand2 = [playercards[1],card()]
-        
-        chips -= bets
-        
-        #plays the players hand one after another
-        print("Play the First hand")
-        split(hand1,timesThrough,dealercards,bets)
-        print(" ")
-        
-        print("Play the Second hand")
-        split(hand2,timesThrough,dealercards,bets)
-        print(" ")
-        
-        hands = [hand1,hand2]
-        
-        print("The First hand: ",hands[0], " Totals to: ", sum(hands[0]),"  ","The Second hand: ",hands[1], " Totals to: ", sum(hands[1]))
-        print(" ")
-        
-        #after the player hands have been played the dealer reveals their cards
-        while(sum(dealercards) < 17):
-            dealercards.append(card())
+        hand1 = Hand(deck,True)
+        hand2 = Hand(deck,True)
+        hands = [hand1 , hand2]
+
+        for hand in hands:
+            hand.addCard(playerHand.cards[hands.index(hand)])
+            hand.addCard(deck.drawCard())
+            print(f"\nPlay the {hands.index(hand) + 1}. hand")
+            play(hand, firstTime, dealerHand, deck, chips) #Play the game with the two splitted hands
+ 
+        print(f"\nFinal Hands: First hand: {hand1.showHand()}  |  Second hand: {hand2.showHand()}")
+
+        while(dealerHand.total < 17): dealerHand.addCard(deck.drawCard()) #Dealer draw cards until dealers hand is > 17
             
-        print("Dealer has: ",dealercards, " For a sum of: ",sum(dealercards))
-        print(" ")
+        print(f"Dealer has: {dealerHand.showHand()}")
         
-        #Checks who won the game or if they tied
-        for i in range(len(hands)):
-            if(sum(hands[i]) > 21):         
-                print("You busted. Dealer wins Hand",i + 1,".")
-            elif(sum(dealercards) > 21):
-                print("You win hand ",i + 1,". Dealer Busted")
-                chips += (bets + bets)
-                    
-            elif(sum(hands[i]) <= 21 and sum(dealercards) == sum(hands[i])):
-                print("Yours and the dealers scores were the same! Hand ",i + 1," Ties!") 
-                chips += bets
-            elif(sum(hands[i]) <= 21 and sum(hands[i]) > sum(dealercards)):
-                print("You had a bigger score than the dealer. You won Hand ",i + 1,".") 
-                chips += (bets + bets)
-            elif(sum(hands[i]) < sum(dealercards) and sum(dealercards) <= 21):
-                print("Dealers score was bigger. You lost Hand ",i + 1,".") 
+        for hand in hands:
+            print(f"Hand {hands.index(hand) + 1}: ",end="")
+            checkWinner(dealerHand, hand, chips) #Checks who won the game or if they tied
+
     else:
-        print("Not a valid input")
-        
-#------------------------------------------------------------------------------
+        print("Invalid input or Insufficient Chips")
 
-#Your chips and your bet
 
-if(bet.isnumeric() == False or int(bet) > chips):
-    print("Not a sufficient number")
-    quit()
-    
-#Checks if anyone had a natural blackjack if player had it he/her gets 3 times his/her bet
-if(playerhand[0] == 11 and playerhand[1] == 10
-    or playerhand[1] == 11 and playerhand[0] == 10):
-    
-    print("Your cards: ", playerhand,' "21 You win"')
-    chips += (int(bet)*3)
-    playAgain()
-    
-elif(dealerhand[0] == 11 and dealerhand[1] == 10
-    or dealerhand[1] == 11 and dealerhand[0] == 10):
-    
-    print("Dealer: ", dealerhand,' "21 Dealer wins"')
-    chips -= int(bet)
-    playAgain()
-else:
-    print("Dealer is showing a ",dealerhand[0])
-    play(playerhand,times,dealerhand,int(bet))
-    playAgain()
-    print(" ")
+chips = Chips()
+deal(chips)
