@@ -113,9 +113,26 @@ class Chips:
                 print(f"Error: {e}. Please try again")
         return self.bet
 
-def deal(chips):
+class Stats:
+    def __init__(self):
+        self.wins = 0
+        self.losses = 0
+        self.ties = 0
+
+    def updateValues(self):
+        self.gamesPlayed = self.wins + self.losses + self.ties
+        if self.wins <= 0: self.winrate = 0
+        else: self.winrate = self.wins / self.gamesPlayed * 100
+
+    def __str__(self):
+        self.updateValues()
+        return (
+            "\n| Win | Tie | Loss | Winrate |\n"
+            f"|  {self.wins}  |  {self.ties}  |  {self.losses}   |  {self.winrate:.2f} % |"
+        )
+
+def deal(chips,stats):
     clearTerminal() # Clear the terminal so it looks nicer
-    firstTime = True
 
     if chips.total <= 0: #We check if player is out of chips
         print("Out of chips!")
@@ -130,16 +147,18 @@ def deal(chips):
     if playerHand.isBlackJack: # Check if player or dealer had a blackjack
         print(f'Your cards: {playerHand.showHand()} "21 You win"')
         chips.total += chips.bet * 3
+        stats.wins += 1
         
     elif dealerHand.isBlackJack:
         print(f'Dealer: {dealerHand.showHand()} "21 Dealer wins"')
         chips.total -= chips.bet
+        stats.losses += 1
 
     else:
         print(f'Dealer is showing a {dealerHand.cards[0].face + " " + dealerHand.cards[0].suit}')    
-        play(playerHand,firstTime,dealerHand,deck,chips)
+        play(playerHand,True,dealerHand,deck,chips,stats)
 
-    playAgain(chips)
+    playAgain(chips,stats)
 
 def whatToDo(hand, firstTime):
     choices = ["h","s"] # Default choices are hit and stand
@@ -153,35 +172,42 @@ def whatToDo(hand, firstTime):
         ask = input(f"[{'],['.join(choice.upper() for choice in choices)}]: ").lower()
         if ask in choices: return ask
 
-def checkWinner(dealerHand, playerHand, chips):
+def checkWinner(dealerHand, playerHand, chips, stats):
     wonChips = 0
     if playerHand.isBusted: # If players cards total > 21      
         print(f"You busted.")
+        stats.losses += 1
     elif dealerHand.isBusted: # If dealers cards total > 21
         wonChips = chips.bet * 2
+        stats.wins += 1
         print(f"You win {wonChips} chips. Dealer Busted")
     elif(playerHand.total == dealerHand.total): # If players and dealers cards total are the same
         print("Tie!")
+        stats.ties += 1
         wonChips = chips.bet
     elif playerHand.total > dealerHand.total: # If players total > dealers total but didn't bust
         wonChips = chips.bet * 2
+        stats.wins += 1
         print(f"You won {wonChips} chips!")
     else:
         print("Dealer wins!")
+        stats.losses += 1
 
     chips.total += wonChips
 
-def playAgain(chips):
+def playAgain(chips,stats):
     while True:
-        tryAgain = input("\nPlay Again? (Y/N): ").lower() #asks player if they want to play again
+        tryAgain = input("\nPlay Again? (Y/N) Stats (S) : ").lower() #asks player if they want to play again
         if tryAgain == "y":
-            deal(chips) # If player wants to play again deal cards
+            deal(chips,stats) # If player wants to play again deal cards
+        if tryAgain == "s":
+            print(stats)
         elif tryAgain == "n":
             print(f"\nYou have quit. Your chips: {chips.total}")
             quit()
 
-def play(playerHand, firstTime, dealerHand, deck, chips):
-
+def play(playerHand, firstTime, dealerHand, deck, chips, stats):
+    
     print(f"\nYour cards: {playerHand.showHand()}")
     ask = whatToDo(playerHand, firstTime).lower()
 
@@ -193,26 +219,18 @@ def play(playerHand, firstTime, dealerHand, deck, chips):
         playerHand.addCard(deck.drawCard())
         if playerHand.isBusted:
             print(f"\nYou busted. Your cards: {playerHand.showHand()}")
+            stats.losses += 1
             return 
-        play(playerHand,firstTime,dealerHand,deck,chips)
+        play(playerHand,firstTime,dealerHand,deck,chips,stats)
         
-    elif ask == "s" or ask == "d":
+    elif ask == "s" or ask == "d" and chips.total >= chips.bet:
         if ask == "d": # If player doubles down adjust chips and draw a card after that stand
-            if chips.total < chips.bet:
-                print("\nNot enough Chips to Double Down.")
-                chips.total += chips.bet
-                return
-            
             playerHand.addCard(deck.drawCard())
             chips.total -= chips.bet
             chips.bet *= 2
 
-        if playerHand.isBusted:           
-            print(f"You busted.Your cards: {playerHand.showHand()}")
-            return
-        
         while dealerHand.total < 17: dealerHand.addCard(deck.drawCard())
-        checkWinner(dealerHand, playerHand, chips) #Checks who won the game or if they tied
+        checkWinner(dealerHand, playerHand, chips, stats) #Checks who won the game or if they tied
         print(f"Your cards: {playerHand.showHand()}")
         print(f"Dealers Cards: {dealerHand.showHand()}")
 
@@ -230,21 +248,22 @@ def play(playerHand, firstTime, dealerHand, deck, chips):
             hand.addCard(playerHand.cards[hands.index(hand)])
             hand.addCard(deck.drawCard())
             print(f"\nPlay the {hands.index(hand) + 1}. hand")
-            play(hand, firstTime, dealerHand, deck, chips) #Play the game with the two splitted hands
+            play(hand, firstTime, dealerHand, deck, chips, stats) #Play the game with the two splitted hands
  
         print(f"\nFinal Hands: First hand: {hand1.showHand()}  |  Second hand: {hand2.showHand()}")
 
         while(dealerHand.total < 17): dealerHand.addCard(deck.drawCard()) #Dealer draw cards until dealers hand is > 17
-            
         print(f"Dealer has: {dealerHand.showHand()}")
         
         for hand in hands:
             print(f"Hand {hands.index(hand) + 1}: ",end="")
-            checkWinner(dealerHand, hand, chips) #Checks who won the game or if they tied
+            checkWinner(dealerHand, hand, chips, stats) #Checks who won the game or if they tied
 
     else:
         print("Invalid input or Insufficient Chips")
+        if firstTime: chips.total += chips.bet
+        play(playerHand, firstTime, dealerHand, deck, chips, stats)
 
-
+stats = Stats()
 chips = Chips()
-deal(chips)
+deal(chips,stats)
